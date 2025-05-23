@@ -1,12 +1,12 @@
 from typing import Optional, Set
 from bsky import get_follower_handles
 from graph_tool.all import Graph, Vertex, load_graph
-from graf_fusio_threads import build_threads_graph
+from graf_interaccio_threads import _get_client_threads, _build_interaction_graph
 import matplotlib
 import pandas as pd
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Tuple
+import os
 matplotlib.use("Agg")
-
 
 def identifica_seguidors_valuosos(client_handle: str) -> None:
     """
@@ -15,38 +15,42 @@ def identifica_seguidors_valuosos(client_handle: str) -> None:
     fora del cercle de seguidors directes.
     Ara s'obtenen els seguidors directes amb get_follower_handles.
     """
+    carpeta = os.path.join("resultats", client_handle)
+    os.makedirs(carpeta, exist_ok=True)
+    threads_path = os.path.join(carpeta, f"{client_handle}_threads.gt")
     # --- Carreguem graf de threads ---
-    g_threads: Graph = build_threads_graph(client_handle, f"threads_{client_handle}.gt", max_posts=100)
+    if not os.path.isfile(threads_path):
+        threads = _get_client_threads(client_handle, limit=100)
+        g_threads: Graph = _build_interaction_graph(threads)
+        g_threads.save(threads_path)
+    else:
+        g_threads: Graph = load_graph(threads_path)
     if g_threads is None:
-        print(f"❌ Error: No s'ha pogut construir el graf de threads per '{client_handle}'.")
+        print(f"Error: No s'ha pogut construir el graf de threads per '{client_handle}'.")
         return
 
     # --- Extraiem seguidors directes del client ---
     seguidors_directes: Set[str] = set(get_follower_handles(client_handle))
 
     # --- Analitzem comportament dels seguidors al graf de threads ---
-    dades: List[dict[str, str | int]] = [] 
+    dades: List[dict[str, str | int | float]] = []
 
-    for v in g_threads.vertices(): 
-        autor: str = g_threads.vp["handle"][v]
+    for v in g_threads.vertices():
+        autor: str = g_threads.vp["user"][v] if "user" in g_threads.vp else g_threads.vp["handle"][v]
         if autor not in seguidors_directes:
             continue
-
         expansions: int = 0
         total_respostes: int = 0
-
         for e in v.in_edges():  # qui ha respost a aquest seguidor
             origen = e.source()
-            repon: str = g_threads.vp["handle"][origen] 
+            repon: str = g_threads.vp["user"][origen] if "user" in g_threads.vp else g_threads.vp["handle"][origen]
             if repon != client_handle and repon not in seguidors_directes:
                 expansions += 1
             total_respostes += 1
-
         if total_respostes > 0:
             proporcio_expansio: float = expansions / total_respostes
         else:
             proporcio_expansio = 0.0
-
         dades.append(
             {
                 "handle": autor,
@@ -55,30 +59,28 @@ def identifica_seguidors_valuosos(client_handle: str) -> None:
                 "proporcio_expansio": proporcio_expansio,
             }
         )
-
     # --- Guardem resultats ---
     df = pd.DataFrame(dades)
     if df.empty:
-        print("⚠️ No s'ha trobat cap seguidor directe amb activitat al graf de threads.")
+        print("No s'ha trobat cap seguidor directe amb activitat al graf de threads.")
         return
     df = df.sort_values(by="proporcio_expansio", ascending=False)
-    df.to_csv(f"seguidors_valuosos_{client_handle}.csv", index=False)
+    out_csv = os.path.join(carpeta, f"seguidors_valuosos_{client_handle}.csv")
+    df.to_csv(out_csv, index=False)
 
-    # Mostra només els 10 primers, o tots els amb proporció > 0 si n'hi ha menys de 10
-    df_positius = df[df["proporcio_expansio"] > 0]
-    if len(df_positius) < 10 and not df_positius.empty:
-        print("📋 Seguidors amb proporció d'expansió > 0:")
-        print(df_positius.to_string(index=False))
-    else:
-        print("📋 Top seguidors amb més capacitat d'expansió:")
-        print(df.head(10).to_string(index=False))
-    print(f"✅ Resultats desats a 'seguidors_valuosos_{client_handle}.csv'")
+    # Mostra taula bonica per pantalla
+    print("\nSeguidors valuosos (expansió fora del cercle directe):")
+    print("{:<30} {:>10} {:>18} {:>18}".format("Handle", "Respostes", "Expansió", "% Expansió"))
+    print("-"*80)
+    for _, row in df.iterrows():
+        percent = f"{row['proporcio_expansio']*100:.1f}%"
+        print(f"{row['handle']:<30} {int(row['respostes_totals']):>10} {int(row['respostes_expansio']):>18} {percent:>18}")
+    print(f"\nResultats desats a '{out_csv}'")
+    print("\n% Expansió: percentatge de respostes d'aquest seguidor que han ajudat a expandir la veu fora del cercle directe.")
 
-
-def main() -> None:
+def main():
     handle: str = input("Introdueix el handle del client: ")
     identifica_seguidors_valuosos(handle)
-
 
 if __name__ == "__main__":
     main()
