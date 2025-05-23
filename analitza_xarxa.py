@@ -1,49 +1,68 @@
 import click
 import os
-from build_followers_subgraph import build_followers_subgraph
-from build_threads_graph import build_threads_graph
-from analisi_seguidors import analisi_seguidors
-from analisi_comunitats import analisi_comunitats
+from graph_tool.all import load_graph
+from graf_seguidors import build_followers_subgraph
+from graf_interaccio_threads import _get_client_threads, _build_interaction_graph
+from comunitats import main as comunitats_main
+from pagerank import main as pagerank_main
+from propagacio_threads import main as propagacio_main
+
+def neteja_handle(handle: str) -> str:
+    # Elimina caràcters invisibles i espais
+    return handle.strip().replace('\u200e', '').replace('\u200f', '').replace('\u202a', '').replace('\u202c', '').replace('\u202d', '').replace('\u202e', '')
 
 @click.command()
-@click.option('--handle', prompt='🔠 Introdueix el handle de l\'usuari (sense @)', help='Handle de Bluesky (sense @)')
-@click.option('--analisi', type=click.Choice(['seguidors', 'threads', 'comunitats', 'completa']), default='completa', help='Tipus d\'anàlisi a fer')
+@click.option('--handle', prompt="Introdueix el handle de l'usuari (sense @)", help='Handle de Bluesky (sense @)')
+@click.option('--analisi', type=click.Choice(['seguidors', 'threads', 'comunitats', 'pagerank', 'propagacio', 'completa']), default='completa', help="Tipus d'anàlisi a fer")
 def analitza(handle: str, analisi: str):
-    """
-    Analitza la xarxa de seguidors i converses d'un usuari de Bluesky,
-    i produeix visualitzacions i dades analítiques.
-    """
-    print(f"\n🔍 Analitzant usuari: @{handle}")
-    fitxer_seguidors = f"seguidors_{handle}.gt"
-    fitxer_threads = f"threads_{handle}.gt"
+    handle = neteja_handle(handle)
+    carpeta = os.path.join("resultats", handle)
+    os.makedirs(carpeta, exist_ok=True)
+    fitxer_seguidors = os.path.join(carpeta, f"{handle}_followers.gt")
+    fitxer_threads = os.path.join(carpeta, f"{handle}_threads.gt")
 
-    df_centralitats = None
-
-    if analisi in ["seguidors", "completa"]:
-        if not os.path.exists(fitxer_seguidors):
-            print("📡 Creant graf de seguidors...")
-            build_followers_subgraph(handle, fitxer_seguidors)
+    # SEGUIDORS
+    if analisi in ["seguidors", "completa", "comunitats", "pagerank"]:
+        if not os.path.isfile(fitxer_seguidors):
+            print("Creant graf de seguidors...")
+            build_followers_subgraph(handle)
         else:
-            print("✅ Graf de seguidors ja existeix.")
+            print("Graf de seguidors ja existeix.")
+        if os.path.isfile(fitxer_seguidors):
+            g = load_graph(fitxer_seguidors)
+            if g.num_vertices() == 0:
+                print("Advertència: el graf de seguidors està buit. Comprova el handle i que l'usuari tingui seguidors.")
 
-        print("📈 Analitzant centralitats de seguidors...")
-        df_centralitats = analisi_seguidors(fitxer_seguidors)
+    # THREADS
+    if analisi in ["threads", "completa", "propagacio"]:
+        if not os.path.isfile(fitxer_threads):
+            print("Creant graf de threads...")
+            threads = _get_client_threads(handle)
+            g = _build_interaction_graph(threads)
+            g.save(fitxer_threads)
+        else:
+            print("Graf de threads ja existeix.")
+        if os.path.isfile(fitxer_threads):
+            g = load_graph(fitxer_threads)
+            if g.num_vertices() == 0:
+                print("Advertència: el graf de threads està buit. Comprova el handle i que l'usuari tingui activitat.")
 
+    # COMUNITATS
     if analisi in ["comunitats", "completa"]:
-        if not os.path.exists(fitxer_seguidors):
-            print("⚠️ Graf de seguidors no trobat. Executa primer l'anàlisi de seguidors.")
-        else:
-            print("🧩 Analitzant comunitats...")
-            analisi_comunitats(fitxer_seguidors, output_prefix=f"comunitats_{handle}")
+        print("Analitzant comunitats...")
+        comunitats_main(handle)
 
-    if analisi in ["threads", "completa"]:
-        if not os.path.exists(fitxer_threads):
-            print("💬 Creant graf de threads...")
-            build_threads_graph(handle, fitxer_threads)
-        else:
-            print("✅ Graf de threads ja existeix.")
+    # PAGERANK
+    if analisi in ["pagerank", "completa"]:
+        print("Calculant centralitats (PageRank, Betweenness, Closeness)...")
+        pagerank_main(handle)
 
-    print("\n🏁 Anàlisi finalitzada!")
+    # PROPAGACIÓ
+    if analisi == "propagacio":
+        print("Calculant propagació de threads...")
+        propagacio_main(handle)
+
+    print("Anàlisi finalitzada!")
 
 if __name__ == '__main__':
     analitza()
