@@ -6,6 +6,7 @@ from graf_interaccio_threads import _get_client_threads, _build_interaction_grap
 from comunitats import main as comunitats_main
 from pagerank import main as pagerank_main
 from propagacio_threads import main as propagacio_main
+from vertex_sortida import identifica_seguidors_valuosos
 
 def neteja_handle(handle: str) -> str:
     # Elimina caràcters invisibles i espais
@@ -13,7 +14,7 @@ def neteja_handle(handle: str) -> str:
 
 @click.command()
 @click.option('--handle', prompt="Introdueix el handle de l'usuari (sense @)", help='Handle de Bluesky (sense @)')
-@click.option('--analisi', type=click.Choice(['seguidors', 'threads', 'comunitats', 'pagerank', 'propagacio', 'completa']), default='completa', help="Tipus d'anàlisi a fer")
+@click.option('--analisi', type=click.Choice(['seguidors', 'threads', 'comunitats', 'pagerank', 'propagacio', 'valuosos', 'completa']), default='completa', help="Tipus d'anàlisi a fer")
 def analitza(handle: str, analisi: str):
     handle = neteja_handle(handle)
     carpeta = os.path.join("resultats", handle)
@@ -61,6 +62,11 @@ def analitza(handle: str, analisi: str):
     if analisi == "propagacio":
         print("Calculant propagació de threads...")
         propagacio_main(handle)
+
+    # VALUOSOS
+    if analisi == "valuosos":
+        print("Identificant seguidors valuosos...")
+        identifica_seguidors_valuosos(handle)
 
     print("Anàlisi finalitzada!")
 
