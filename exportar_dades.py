@@ -6,23 +6,20 @@ def exportar_dades(handle: str):
     Organitza i copia tots els fitxers generats per l'anàlisi
     a la carpeta resultats/<handle>/
     """
-    print(f"\n📁 Organitzant resultats per a @{handle}...")
+    print(f"Organitzant resultats per a @{handle}...")
     carpeta_desti = os.path.join("resultats", handle)
     os.makedirs(carpeta_desti, exist_ok=True)
 
-    # Llistat de fitxers esperats a moure (nom fix o prefixats)
+    # Llistat de fitxers esperats a moure (prefixats pel handle)
     fitxers_a_moure = [
-        f"seguidors_{handle}.gt",
-        f"threads_{handle}.gt",
-        f"analisi_seguidors_{handle}.csv",
+        f"{handle}_followers.gt",
+        f"{handle}_threads.gt",
+        f"comunitats_{handle}.png",
+        f"comunitats_{handle}.pdf",
+        "comunitats.csv",
+        "centralitats_seguidors.csv",
         "pagerank_vs_betweenness.png",
-        "pagerank_vs_closeness.png",
-        "distribucions_centralitats.png",
-        f"comunitats_{handle}_visualitzacio.pdf",
-        f"comunitats_{handle}_jerarquia.pdf",
-        f"comunitats_{handle}_densitats.csv",
-        f"comunitats_{handle}_assignacio.csv",
-        f"comunitats_{handle}_pagerank_comunitats.csv"
+        "pagerank_vs_closeness.png"
     ]
 
     fitxers_moguts = 0
@@ -32,6 +29,10 @@ def exportar_dades(handle: str):
             shutil.move(fitxer, os.path.join(carpeta_desti, os.path.basename(fitxer)))
             fitxers_moguts += 1
         else:
-            print(f"⚠️ Fitxer no trobat: {fitxer}")
+            print(f"Fitxer no trobat: {fitxer}")
 
-    print(f"\n✅ {fitxers_moguts} fitxers moguts a 'resultats/{handle}/'")
+    print(f"{fitxers_moguts} fitxers moguts a 'resultats/{handle}/'")
+
+if __name__ == "__main__":
+    handle = input("Introdueix el handle de l'usuari (ex: user.bsky.social): ").strip()
+    exportar_dades(handle)
