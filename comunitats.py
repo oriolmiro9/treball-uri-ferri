@@ -85,8 +85,8 @@ def main(handle=None):
     else:
         vsize = 6
 
-    # Desa com PNG i PDF només a la carpeta de resultats
-    output_png = os.path.join(carpeta, f"comunitats_{handle}.png")
+    # Desa com svg i PDF només a la carpeta de resultats
+    output_svg = os.path.join(carpeta, f"comunitats_{handle}.svg")
     graph_draw(g,
             vertex_fill_color=block_colors,
             edge_color=edge_colors,
@@ -95,8 +95,8 @@ def main(handle=None):
             edge_pen_width=1.2,
             output_size=(1800, 1800),
             bg_color="white",
-            output=output_png)
-    print(f"Imatge PNG de comunitats desada a: {output_png}")
+            output=output_svg)
+    print(f"Imatge svg de comunitats desada a: {output_svg}")
     
     # ---------------------------
     # 4. Càlcul de densitat per comunitat
