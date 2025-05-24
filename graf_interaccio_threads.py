@@ -44,28 +44,27 @@ def _get_client_threads(client_handle: str, limit: int = 500) -> List[Thread]:
     return threads
 
 
-def _build_interaction_graph(threads: List[Thread]) -> Graph:
+def build_interaction_graph(threads: List[Thread], client_handle: str) -> Graph:
     """
-    A partir d'una llista de Thread d'un usuari de Bluesky, es construeix un graf dirigit que representa
-    les interaccions entre usuaris on cada usuari és un node. Cada resposta genera una aresta de l'autor original
-    cap a l'usuari a qui ha respost. Si dos usuaris interactuen més d'una vegada, s'incrementa el pes de l'aresta.
+    Construeix i desa el graf d'interacció de threads (GT i SVG) a la carpeta de resultats.
+    Retorna el graf creat.
     """
     graph = Graph(directed=True)
     user_prop = graph.new_vertex_property("string")
     weight_prop = graph.new_edge_property("int")
-    user_to_vertex: Dict[str, Vertex] = {}
+    user_to_vertex = {}
 
-    def _get_vertex(handle: str) -> Vertex:
+    def _get_vertex(handle: str):
         if handle not in user_to_vertex:
-            v: Vertex = graph.add_vertex()
+            v = graph.add_vertex()
             user_prop[v] = handle
             user_to_vertex[handle] = v
         return user_to_vertex[handle]
 
     def _explore_thread_and_add_edges(t: Thread) -> None:
-        post_author_v: Vertex = _get_vertex(t.post.author.handle)
+        post_author_v = _get_vertex(t.post.author.handle)
         for reply in t.replies:
-            reply_author_v: Vertex = _get_vertex(reply.post.author.handle)
+            reply_author_v = _get_vertex(reply.post.author.handle)
             # Evita arestes d'autoresposta
             if post_author_v == reply_author_v:
                 _explore_thread_and_add_edges(reply)
@@ -84,6 +83,27 @@ def _build_interaction_graph(threads: List[Thread]) -> Graph:
     graph.vertex_properties["user"] = user_prop
     graph.edge_properties["weight"] = weight_prop
     print(f"Nodes: {graph.num_vertices()}, Arestes: {graph.num_edges()}")
+
+    # Desa el graf GT i SVG
+    carpeta = os.path.join("resultats", client_handle)
+    os.makedirs(carpeta, exist_ok=True)
+    output_gt = os.path.join(carpeta, f"{client_handle}_threads.gt")
+    graph.save(output_gt)
+    print(f"Graf d'interacció de threads guardat a: {output_gt}")
+    try:
+        output_svg = os.path.join(carpeta, f"threads_{client_handle}.svg")
+        graph_draw(
+            graph,
+            vertex_shape="circle",
+            vertex_size=8,
+            edge_pen_width=1.2,
+            output_size=(1200, 1200),
+            bg_color="white",
+            output=output_svg
+        )
+        print(f"Imatge SVG del graf desada a: {output_svg}")
+    except Exception as e:
+        print(f"No s'ha pogut generar l'SVG: {e}")
     return graph
 
 
@@ -94,12 +114,7 @@ def main():
     else:
         client_handle = input("Introdueix el handle de l'usuari (ex: user.bsky.social): ").strip()
     threads = _get_client_threads(client_handle)
-    g = _build_interaction_graph(threads)
-    carpeta = os.path.join("resultats", client_handle)
-    os.makedirs(carpeta, exist_ok=True)
-    output_gt = os.path.join(carpeta, f"{client_handle}_threads.gt")
-    g.save(output_gt)
-    print(f"Graf d'interacció de threads guardat a: {output_gt}")
+    build_interaction_graph(threads, client_handle)
 
 if __name__ == "__main__":
     main()
