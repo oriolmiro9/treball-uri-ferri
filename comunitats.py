@@ -60,7 +60,7 @@ def main(handle=None):
     # ---------------------------
     block_colors = g.new_vertex_property("vector<float>")
     edge_colors = g.new_edge_property("vector<float>")
-    palette = cm.get_cmap("tab20")
+    palette = plt.get_cmap("tab20")
 
     for v in g.vertices():
         c = blocks[v]
@@ -87,7 +87,6 @@ def main(handle=None):
 
     # Desa com PNG i PDF només a la carpeta de resultats
     output_png = os.path.join(carpeta, f"comunitats_{handle}.png")
-    output_pdf = os.path.join(carpeta, f"comunitats_{handle}.pdf")
     graph_draw(g,
             vertex_fill_color=block_colors,
             edge_color=edge_colors,
@@ -98,17 +97,7 @@ def main(handle=None):
             bg_color="white",
             output=output_png)
     print(f"Imatge PNG de comunitats desada a: {output_png}")
-    graph_draw(g,
-            vertex_fill_color=block_colors,
-            edge_color=edge_colors,
-            vertex_shape="circle",
-            vertex_size=vsize,
-            edge_pen_width=1.2,
-            output_size=(1800, 1800),
-            bg_color="white",
-            output=output_pdf)
-    print(f"Imatge PDF de comunitats desada a: {output_pdf}")
-
+    
     # ---------------------------
     # 4. Càlcul de densitat per comunitat
     # ---------------------------
