@@ -5,6 +5,8 @@ from collections import Counter
 import os
 import numpy as np
 import re
+import matplotlib
+matplotlib.use("Agg")  # Per entorns sense GUI (servidors)
 
 
 def calcula_distancia_propagacio(g: Graph, handle_arrel: str) -> None:
@@ -56,7 +58,13 @@ def calcula_distancia_propagacio(g: Graph, handle_arrel: str) -> None:
     plt.title(f"Histograma de distàncies des de '{handle_arrel}'")
     plt.grid(True)
     plt.tight_layout()
-    plt.show()
+    # Desa el gràfic en comptes de mostrar-lo
+    carpeta = os.path.join("resultats", handle_arrel)
+    os.makedirs(carpeta, exist_ok=True)
+    img_path = os.path.join(carpeta, f"propagacio_{handle_arrel}.svg")
+    plt.savefig(img_path)
+    plt.close()
+    print(f"📈 Gràfic desat a: {img_path}")
 
 
 def carregar_graf_threads(handle: str):
