@@ -1,4 +1,4 @@
-from graf_interaccio_threads import _build_interaction_graph, _get_client_threads
+from graf_interaccio_threads import build_interaction_graph, _get_client_threads
 from graph_tool.all import load_graph, Graph, shortest_distance
 import matplotlib.pyplot as plt
 from collections import Counter
@@ -73,8 +73,8 @@ def carregar_graf_threads(handle: str):
     graf_path = os.path.join(carpeta, f"{handle}_threads.gt")
     if not os.path.isfile(graf_path):
         print(f"No s'ha trobat el graf de threads per a {handle}. Es genera automàticament...")
-        import subprocess
-        subprocess.run(["python3", "graf_interaccio_threads.py", handle], check=True)
+        threads = _get_client_threads(handle)
+        build_interaction_graph(threads, handle)
         if not os.path.isfile(graf_path):
             print(f"Error: no s'ha pogut generar el graf de threads per a {handle}.")
             return None
