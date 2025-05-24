@@ -1,6 +1,6 @@
 import sys
 from bsky import get_followers, get_relationships, Profile, Relationships
-from graph_tool.all import Graph
+from graph_tool.all import Graph, graph_draw
 import os
 
 def build_followers_subgraph(client_handle: str) -> None:
@@ -36,6 +36,22 @@ def build_followers_subgraph(client_handle: str) -> None:
     output_gt = os.path.join(carpeta, f"{client_handle}_followers.gt")
     g.save(output_gt)
     print(f"Graf guardat a: {output_gt}")
+
+    # Dibuixa i desa el graf com SVG
+    try:
+        output_svg = os.path.join(carpeta, f"seguidors_{client_handle}.svg")
+        graph_draw(
+            g,
+            vertex_shape="circle",
+            vertex_size=8,
+            edge_pen_width=1.2,
+            output_size=(1200, 1200),
+            bg_color="white",
+            output=output_svg
+        )
+        print(f"Imatge SVG del graf desada a: {output_svg}")
+    except Exception as e:
+        print(f"No s'ha pogut generar l'SVG: {e}")
 
 def main() -> None:
     if len(sys.argv) > 1:
