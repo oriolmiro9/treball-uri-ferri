@@ -14,7 +14,12 @@ def neteja_handle(handle: str) -> str:
 
 @click.command()
 @click.option('--handle', prompt="Introdueix el handle de l'usuari (sense @)", help='Handle de Bluesky (sense @)')
-@click.option('--analisi', type=click.Choice(['seguidors', 'threads', 'comunitats', 'pagerank', 'propagacio', 'valuosos', 'completa']), default='completa', help="Tipus d'anàlisi a fer")
+@click.option('--analisi', prompt="Quina anàlisi vols fer? (seguidors/threads/comunitats/pagerank/propagacio/valuosos/completa)",
+              type=click.Choice(['seguidors', 'threads', 'comunitats', 'pagerank', 'propagacio', 'valuosos', 'completa']),
+              default='completa',
+              help="Tipus d'anàlisi a fer")
+
+
 def analitza(handle: str, analisi: str):
     handle = neteja_handle(handle)
     carpeta = os.path.join("resultats", handle)
@@ -53,18 +58,18 @@ def analitza(handle: str, analisi: str):
         print("Analitzant comunitats...")
         comunitats_main(handle)
 
-    # PAGERANK
+    # PAGERANK , BETWEENNESS, CLOSENESS
     if analisi in ["pagerank", "completa"]:
         print("Calculant centralitats (PageRank, Betweenness, Closeness)...")
         pagerank_main(handle)
 
     # PROPAGACIÓ
-    if analisi == "propagacio":
+    if analisi in ["propagacio", "completa"]:
         print("Calculant propagació de threads...")
         propagacio_main(handle)
 
     # VALUOSOS
-    if analisi == "valuosos":
+    if analisi in ["valuosos", "completa"]:
         print("Identificant seguidors valuosos...")
         identifica_seguidors_valuosos(handle)
 
