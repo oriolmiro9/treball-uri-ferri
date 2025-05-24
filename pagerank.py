@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import sys
+import matplotlib
 matplotlib.use("Agg")
 
 def main(handle=None):
@@ -55,7 +56,7 @@ def main(handle=None):
     plt.ylabel("Betweenness")
     plt.title("Reputació vs. Rol de Connector")
     plt.grid(True)
-    img1 = os.path.join(carpeta, "pagerank_vs_betweenness.png")
+    img1 = os.path.join(carpeta, "pagerank_vs_betweenness.svg")
     plt.savefig(img1)
     plt.close()
 
@@ -65,7 +66,7 @@ def main(handle=None):
     plt.ylabel("Closeness")
     plt.title("Reputació vs. Centralitat de Posició")
     plt.grid(True)
-    img2 = os.path.join(carpeta, "pagerank_vs_closeness.png")
+    img2 = os.path.join(carpeta, "pagerank_vs_closeness.svg")
     plt.savefig(img2)
     plt.close()
     print(f"Imatges generades: {img1} i {img2}")
