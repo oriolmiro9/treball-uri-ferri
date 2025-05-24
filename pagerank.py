@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import sys
+matplotlib.use("Agg")
 
 def main(handle=None):
     if handle is None:
