@@ -2,11 +2,12 @@ import click
 import os
 from graph_tool.all import load_graph
 from graf_seguidors import build_followers_subgraph
-from graf_interaccio_threads import _get_client_threads, _build_interaction_graph
+from graf_interaccio_threads import _get_client_threads, build_interaction_graph
 from comunitats import main as comunitats_main
 from pagerank import main as pagerank_main
 from propagacio_threads import main as propagacio_main
 from vertex_sortida import identifica_seguidors_valuosos
+
 
 def neteja_handle(handle: str) -> str:
     # Elimina caràcters invisibles i espais
@@ -44,8 +45,7 @@ def analitza(handle: str, analisi: str):
         if not os.path.isfile(fitxer_threads):
             print("Creant graf de threads...")
             threads = _get_client_threads(handle)
-            g = _build_interaction_graph(threads)
-            g.save(fitxer_threads)
+            g = build_interaction_graph(threads, handle)
         else:
             print("Graf de threads ja existeix.")
         if os.path.isfile(fitxer_threads):
@@ -58,7 +58,7 @@ def analitza(handle: str, analisi: str):
         print("Analitzant comunitats...")
         comunitats_main(handle)
 
-    # PAGERANK , BETWEENNESS, CLOSENESS
+    # PAGERANK , BETWEENESS, CLOSENESS
     if analisi in ["pagerank", "completa"]:
         print("Calculant centralitats (PageRank, Betweenness, Closeness)...")
         pagerank_main(handle)
