@@ -1,10 +1,10 @@
 from typing import Optional, Set
 from bsky import get_follower_handles
 from graph_tool.all import Graph, Vertex, load_graph
-from graf_interaccio_threads import _get_client_threads, _build_interaction_graph
+from graf_interaccio_threads import _get_client_threads, build_interaction_graph
 import matplotlib
 import pandas as pd
-from typing import List, Dict, Tuple
+from typing import List
 import os
 matplotlib.use("Agg")
 
@@ -13,7 +13,7 @@ def identifica_seguidors_valuosos(client_handle: str) -> None:
     Combina el graf de threads per identificar
     quins seguidors del client ajuden a expandir la seva veu
     fora del cercle de seguidors directes.
-    Ara s'obtenen els seguidors directes amb get_follower_handles.
+    S'obtenen els seguidors directes amb get_follower_handles.
     """
     carpeta = os.path.join("resultats", client_handle)
     os.makedirs(carpeta, exist_ok=True)
@@ -21,8 +21,7 @@ def identifica_seguidors_valuosos(client_handle: str) -> None:
     # --- Carreguem graf de threads ---
     if not os.path.isfile(threads_path):
         threads = _get_client_threads(client_handle, limit=100)
-        g_threads: Graph = _build_interaction_graph(threads)
-        g_threads.save(threads_path)
+        g_threads: Graph = build_interaction_graph(threads, client_handle)
     else:
         g_threads: Graph = load_graph(threads_path)
     if g_threads is None:
@@ -36,7 +35,7 @@ def identifica_seguidors_valuosos(client_handle: str) -> None:
     dades: List[dict[str, str | int | float]] = []
 
     for v in g_threads.vertices():
-        autor: str = g_threads.vp["user"][v] if "user" in g_threads.vp else g_threads.vp["handle"][v]
+        autor: str = g_threads.vp["user"][v] if "user" in g_threads.vp else g_threads.vp["handle"][v] 
         if autor not in seguidors_directes:
             continue
         expansions: int = 0
