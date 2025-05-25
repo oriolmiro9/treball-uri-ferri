@@ -1,15 +1,18 @@
+import matplotlib
+matplotlib.use("Agg")
 from graf_interaccio_threads import build_interaction_graph, _get_client_threads
 from graph_tool.all import load_graph, Graph, shortest_distance
 import matplotlib.pyplot as plt
 from collections import Counter
 import os
 import numpy as np
-import re
-import matplotlib
-matplotlib.use("Agg")  # Per entorns sense GUI (servidors)
-
 
 def calcula_distancia_propagacio(g: Graph, handle_arrel: str) -> None:
+    """
+    Calcula la distància de propagació de les respostes a partir d'un usuari arrel dins d'un graf de threads.
+    Mostra un histograma de distàncies i desa el gràfic a la carpeta de resultats.
+    Si l'arrel no existeix o no hi ha vèrtexs accessibles, mostra un avís.
+    """
     # Ara la propietat es diu 'user' en comptes de 'handle'
     vp_handle = g.vertex_properties["user"]
 
@@ -21,12 +24,14 @@ def calcula_distancia_propagacio(g: Graph, handle_arrel: str) -> None:
             break
 
     if v_arrel is None:
-        print(f"No s'ha trobat cap vèrtex amb handle '{handle_arrel}'. Potser l'usuari no té posts originals o el handle no coincideix exactament.")
+        print(
+            f"No s'ha trobat cap vèrtex amb handle '{handle_arrel}'. Potser l'usuari no té posts originals o el handle no coincideix exactament."
+        )
         return
 
     # Calcular distàncies
     dist_map = shortest_distance(g, source=v_arrel)
-    import numpy as np
+
     # graph-tool pot retornar un VertexPropertyMap o un array de numpy directament
     # Si és VertexPropertyMap, convertim a array amb list()
     try:
@@ -68,32 +73,52 @@ def calcula_distancia_propagacio(g: Graph, handle_arrel: str) -> None:
 
 
 def carregar_graf_threads(handle: str):
+    """
+    Carrega el graf de threads d'un usuari des de la carpeta de resultats.
+    Si el graf no existeix, l'intenta generar automàticament. Retorna el graf carregat o None si falla.
+    """
     carpeta = os.path.join("resultats", handle)
     os.makedirs(carpeta, exist_ok=True)
     graf_path = os.path.join(carpeta, f"{handle}_threads.gt")
     if not os.path.isfile(graf_path):
-        print(f"No s'ha trobat el graf de threads per a {handle}. Es genera automàticament...")
+        print(
+            f"No s'ha trobat el graf de threads per a {handle}. Es genera automàticament..."
+        )
         threads = _get_client_threads(handle)
         build_interaction_graph(threads, handle)
         if not os.path.isfile(graf_path):
             print(f"Error: no s'ha pogut generar el graf de threads per a {handle}.")
             return None
-    from graph_tool.all import load_graph
     return load_graph(graf_path)
 
 
 def main(handle=None):
+    """
+    Permet executar el mòdul des de la línia de comandes per analitzar la propagació de threads d'un usuari.
+    Demana el handle per entrada o com a argument, i desa els resultats a la carpeta corresponent.
+    """
+    import sys
+
     if handle is None:
-        import sys
         if len(sys.argv) > 1:
             handle = sys.argv[1].strip()
         else:
-            handle = input("Introdueix el handle de l'usuari (ex: user.bsky.social): ").strip()
+            handle = input(
+                "Introdueix el handle de l'usuari (ex: user.bsky.social): "
+            ).strip()
     # Neteja de caràcters invisibles
-    handle = handle.replace('\u200e', '').replace('\u200f', '').replace('\u202a', '').replace('\u202c', '').replace('\u202d', '').replace('\u202e', '')
+    handle = (
+        handle.replace("\u200e", "")
+        .replace("\u200f", "")
+        .replace("\u202a", "")
+        .replace("\u202c", "")
+        .replace("\u202d", "")
+        .replace("\u202e", "")
+    )
     g = carregar_graf_threads(handle)
     if g is not None:
         calcula_distancia_propagacio(g, handle)
+
 
 if __name__ == "__main__":
     main()
