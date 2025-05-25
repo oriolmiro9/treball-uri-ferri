@@ -10,18 +10,49 @@ from vertex_sortida import identifica_seguidors_valuosos
 
 
 def neteja_handle(handle: str) -> str:
-    # Elimina caràcters invisibles i espais
-    return handle.strip().replace('\u200e', '').replace('\u200f', '').replace('\u202a', '').replace('\u202c', '').replace('\u202d', '').replace('\u202e', '')
+    """
+    Elimina caràcters invisibles i espais d'un handle d'usuari per garantir que sigui vàlid per a l'anàlisi.
+    """
+    return (
+        handle.strip()
+        .replace("\u200e", "")
+        .replace("\u200f", "")
+        .replace("\u202a", "")
+        .replace("\u202c", "")
+        .replace("\u202d", "")
+        .replace("\u202e", "")
+    )
+
 
 @click.command()
-@click.option('--handle', prompt="Introdueix el handle de l'usuari (sense @)", help='Handle de Bluesky (sense @)')
-@click.option('--analisi', prompt="Quina anàlisi vols fer? (seguidors/threads/comunitats/pagerank/propagacio/valuosos/completa)",
-              type=click.Choice(['seguidors', 'threads', 'comunitats', 'pagerank', 'propagacio', 'valuosos', 'completa']),
-              default='completa',
-              help="Tipus d'anàlisi a fer")
-
-
+@click.option(
+    "--handle",
+    prompt="Introdueix el handle de l'usuari (sense @)",
+    help="Handle de Bluesky (sense @)",
+)
+@click.option(
+    "--analisi",
+    prompt="Quina anàlisi vols fer? (seguidors/threads/comunitats/pagerank/propagacio/valuosos/completa)",
+    type=click.Choice(
+        [
+            "seguidors",
+            "threads",
+            "comunitats",
+            "pagerank",
+            "propagacio",
+            "valuosos",
+            "completa",
+        ]
+    ),
+    default="completa",
+    help="Tipus d'anàlisi a fer",
+)
 def analitza(handle: str, analisi: str):
+    """
+    Orquestra el pipeline d'anàlisi de xarxa social per a un usuari de Bluesky.
+    Segons el tipus d'anàlisi seleccionat, executa els diferents mòduls i desa els resultats a la carpeta corresponent.
+    Mostra avisos si algun graf és buit o si hi ha problemes amb les dades.
+    """
     handle = neteja_handle(handle)
     carpeta = os.path.join("resultats", handle)
     os.makedirs(carpeta, exist_ok=True)
@@ -38,7 +69,9 @@ def analitza(handle: str, analisi: str):
         if os.path.isfile(fitxer_seguidors):
             g = load_graph(fitxer_seguidors)
             if g.num_vertices() == 0:
-                print("Advertència: el graf de seguidors està buit. Comprova el handle i que l'usuari tingui seguidors.")
+                print(
+                    "Advertència: el graf de seguidors està buit. Comprova el handle i que l'usuari tingui seguidors."
+                )
 
     # THREADS
     if analisi in ["threads", "completa", "propagacio"]:
@@ -51,7 +84,9 @@ def analitza(handle: str, analisi: str):
         if os.path.isfile(fitxer_threads):
             g = load_graph(fitxer_threads)
             if g.num_vertices() == 0:
-                print("Advertència: el graf de threads està buit. Comprova el handle i que l'usuari tingui activitat.")
+                print(
+                    "Advertència: el graf de threads està buit. Comprova el handle i que l'usuari tingui activitat."
+                )
 
     # COMUNITATS
     if analisi in ["comunitats", "completa"]:
@@ -75,5 +110,6 @@ def analitza(handle: str, analisi: str):
 
     print("Anàlisi finalitzada!")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     analitza()
